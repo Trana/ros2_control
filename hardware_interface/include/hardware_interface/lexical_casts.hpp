@@ -27,11 +27,24 @@ namespace hardware_interface
  * from
  https://github.com/ros-planning/srdfdom/blob/ad17b8d25812f752c397a6011cec64aeff090c46/src/model.cpp#L53
 */
-HARDWARE_INTERFACE_PUBLIC
-double stod(const std::string & s);
+double stod(const std::string & s)
+{
+  // convert from string using no locale
+  std::istringstream stream(s);
+  stream.imbue(std::locale::classic());
+  double result;
+  stream >> result;
+  if (stream.fail() || !stream.eof())
+  {
+    throw std::invalid_argument("Failed converting string to real number");
+  }
+  return result;
+}
 
-HARDWARE_INTERFACE_PUBLIC
-bool parse_bool(const std::string & bool_string);
+bool parse_bool(const std::string & bool_string)
+{
+  return bool_string == "true" || bool_string == "True";
+}
 
 }  // namespace hardware_interface
 
