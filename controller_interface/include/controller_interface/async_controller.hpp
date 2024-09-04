@@ -79,8 +79,18 @@ public:
     while (!terminated_.load(std::memory_order_relaxed))
     {
       auto const period = std::chrono::nanoseconds(1'000'000'000 / used_update_rate);
-      TimePoint next_iteration_time =
-        TimePoint(std::chrono::nanoseconds(controller_->get_node()->now().nanoseconds()));
+      TimePoint next_iteration_time;
+
+      #ifdef __APPLE__
+        auto time_since_epoch = std::chrono::nanoseconds(controller_->get_node()->now().nanoseconds());
+        next_iteration_time = std::chrono::system_clock::time_point(
+            std::chrono::duration_cast<std::chrono::system_clock::duration>(time_since_epoch));
+      #else
+        next_iteration_time = TimePoint(std::chrono::duration_cast<TimePoint::duration>(
+            std::chrono::nanoseconds(controller_->get_node()->now().nanoseconds())));
+      #endif
+
+      next_iteration_time += std::chrono::duration_cast<TimePoint::duration>(period);          
 
       if (
         controller_->get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
@@ -95,7 +105,8 @@ public:
             : measured_period);
       }
 
-      next_iteration_time += period;
+      next_iteration_time += std::chrono::duration_cast<TimePoint::duration>(period);
+      
       std::this_thread::sleep_until(next_iteration_time);
     }
   }

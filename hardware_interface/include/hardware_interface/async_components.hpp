@@ -81,9 +81,19 @@ public:
         while (!terminated_.load(std::memory_order_relaxed))
         {
           auto const period = std::chrono::nanoseconds(1'000'000'000 / cm_update_rate_);
-          TimePoint next_iteration_time =
-            TimePoint(std::chrono::nanoseconds(clock_interface_->get_clock()->now().nanoseconds()));
+          TimePoint next_iteration_time;
 
+          #ifdef __APPLE__
+              auto time_since_epoch = std::chrono::nanoseconds(clock_interface_->get_clock()->now().nanoseconds());
+              next_iteration_time = std::chrono::system_clock::time_point(
+                std::chrono::duration_cast<std::chrono::system_clock::duration>(time_since_epoch));
+          #else
+              next_iteration_time = TimePoint(std::chrono::duration_cast<TimePoint::duration>(
+                std::chrono::nanoseconds(clock_interface_->get_clock()->now().nanoseconds())));
+          #endif
+
+          next_iteration_time += std::chrono::duration_cast<TimePoint::duration>(period);
+          
           if (
             component->get_lifecycle_state().id() ==
             lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
@@ -99,7 +109,7 @@ public:
             component->read(clock_interface_->get_clock()->now(), measured_period);
             first_iteration = false;
           }
-          next_iteration_time += period;
+          next_iteration_time += std::chrono::duration_cast<TimePoint::duration>(period);
           std::this_thread::sleep_until(next_iteration_time);
         }
       },

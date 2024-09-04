@@ -157,7 +157,7 @@ CallbackReturn GenericSystem::on_init(const hardware_interface::HardwareInfo & i
     if (if_it != other_interfaces_.end())
     {
       index_custom_interface_with_following_offset_ =
-        std::distance(other_interfaces_.begin(), if_it);
+        static_cast<size_t>(std::distance(other_interfaces_.begin(), if_it));
       RCLCPP_INFO(
         get_logger(), "Custom interface with following offset '%s' found at index: %zu.",
         custom_interface_with_following_offset_.c_str(),
@@ -347,8 +347,8 @@ return_type GenericSystem::prepare_command_mode_switch(
       [key](const auto & joint) { return (key.find(joint.name) != std::string::npos); });
 
     if (joint_it_found != info.joints.end())
-    {
-      const size_t joint_index = std::distance(info.joints.begin(), joint_it_found);
+    {      
+      const size_t joint_index = static_cast<size_t>(std::distance(info.joints.begin(), joint_it_found));
       if (joint_found_in_x_requests_[joint_index] == 0)
       {
         joint_found_in_x_requests_[joint_index] = FOUND_ONCE_FLAG;
@@ -436,7 +436,7 @@ return_type GenericSystem::perform_command_mode_switch(
 
     if (joint_it_found != info.joints.end())
     {
-      const size_t joint_index = std::distance(info.joints.begin(), joint_it_found);
+      const size_t joint_index = static_cast<size_t>(std::distance(info.joints.begin(), joint_it_found));
 
       if (key == info.joints[joint_index].name + "/" + hardware_interface::HW_IF_POSITION)
       {
@@ -631,7 +631,7 @@ bool GenericSystem::get_interface(
   if (it != interface_list.end())
   {
     auto j = std::distance(interface_list.begin(), it);
-    interfaces.emplace_back(name, *it, &values[j][vector_index]);
+    interfaces.emplace_back(name, *it, &values[static_cast<std::size_t>(j)][static_cast<std::size_t>(vector_index)]);
     return true;
   }
   return false;
@@ -648,8 +648,8 @@ void GenericSystem::initialize_storage_vectors(
   for (auto i = 0u; i < interfaces.size(); i++)
   {
     commands[i].resize(component_infos.size(), std::numeric_limits<double>::quiet_NaN());
-    states[i].resize(component_infos.size(), std::numeric_limits<double>::quiet_NaN());
-  }
+    states[i].resize(component_infos.size(), std::numeric_limits<double>::quiet_NaN()); 
+ }
 
   // Initialize with values from URDF
   for (auto i = 0u; i < component_infos.size(); i++)
@@ -667,7 +667,7 @@ void GenericSystem::initialize_storage_vectors(
         // Check the initial_value param is used
         if (!interface.initial_value.empty())
         {
-          states[index][i] = hardware_interface::stod(interface.initial_value);
+          states[static_cast<std::size_t>(index)][static_cast<std::size_t>(i)] = hardware_interface::stod(interface.initial_value);
         }
       }
     }

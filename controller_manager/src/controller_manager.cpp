@@ -210,7 +210,7 @@ ControllerManager::ControllerManager(
   bool activate_all_hw_components, const std::string & manager_node_name,
   const std::string & node_namespace, const rclcpp::NodeOptions & options)
 : rclcpp::Node(manager_node_name, node_namespace, options),
-  update_rate_(get_parameter_or<int>("update_rate", 100)),
+  update_rate_(static_cast<unsigned int>(get_parameter_or<int>("update_rate", 100))),
   resource_manager_(std::make_unique<hardware_interface::ResourceManager>(
     urdf, this->get_node_clock_interface(), this->get_node_logging_interface(),
     activate_all_hw_components, update_rate_)),
@@ -1330,7 +1330,7 @@ controller_interface::return_type ControllerManager::switch_controller(
   switch_params_.do_switch = true;
   // wait until switch is finished
   RCLCPP_DEBUG(get_logger(), "Requested atomic controller switch from realtime loop");
-  std::unique_lock<std::mutex> switch_params_guard(switch_params_.mutex, std::defer_lock);
+  std::unique_lock<std::mutex> switch_params_guard(switch_params_.mutex);
   if (!switch_params_.cv.wait_for(
         switch_params_guard, switch_params_.timeout, [this] { return !switch_params_.do_switch; }))
   {
